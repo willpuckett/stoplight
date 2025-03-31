@@ -1,4 +1,4 @@
 (sym_lib_table
   (version 7)
-  (lib (name "pepper_stepper")(type "KiCad")(uri "${KIPRJMOD}/pepper_stepper.kicad_sym")(options "")(descr ""))
+  (lib (name "stoplight")(type "KiCad")(uri "${KIPRJMOD}/stoplight.kicad_sym")(options "")(descr ""))
 )
