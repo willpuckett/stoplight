@@ -21,7 +21,7 @@ HomeAssistant/ESPHome.
 
 ## Homing
 
-https://github.com/user-attachments/assets/ffcdcfab-e069-4eb5-882f-79ae62518dce
+![homing demo](.images/homing.gif)
 
 ## Fabrication
 
@@ -36,6 +36,8 @@ steppers.
 
 The build sometimes fails, but can usually be completed by repeatedly pressing
 'try again', or switching to 'arduino' framework.
+
+This demo exposes number to make tuning StallGuard easier.
 
 ```yaml
 substitutions:
