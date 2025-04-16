@@ -21,11 +21,9 @@ HomeAssistant/ESPHome.
 
 ## 
 
-> [!WARNING] ~~Stoplight is WIP. It has been breadboarded but the first run has
-> not yet been vetted. Proceed with caution.~~ StopLight first run is fully
-> operational.
+> [!WARNING] ~~Stoplight is WIP. It has been breadboarded but the first run has not yet been vetted. Proceed with caution.~~ StopLight first run is fully operational.
 
-![homing demo](.images/homing.mp4)
+<video src=".images/homing.mp4" width="300" />
 
 ## Fabrication
 
