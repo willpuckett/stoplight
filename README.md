@@ -506,8 +506,11 @@ number:
 
 ## Reference
 
+[TMC2209 Calaulations Worksheet](https://www.analog.com/media/en/engineering-tools/design-tools/TMC2209_Calculations.xlsx)
+
 [BTT-TMC2209-v1.2](https://pax.deno.dev/bigtreetech/BIGTREETECH-TMC2209-V1.2@master/Schematic/TMC2209-V1.2.pdf?b)
 
 [Cookie Robotics](https://cookierobotics.com/042/)
 
 [jangeox](http://www.jangeox.be/2013/10/change-unipolar-28byj-48-to-bipolar.html)
+
