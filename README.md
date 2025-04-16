@@ -13,17 +13,15 @@ Commercial stepsticks have sense resistors that are not properly sized for
 'smaller' motors to take advantage of many of TMC2209's features, including
 stallguard.
 
-> StopLight brings stall sensing to commodity low cost, high torque motors.
+> StopLight brings stall sensing to commodity/low cost, high torque motors.
 
 Stoplight seeks to remedy these issues, while also providing software selectable
 voltage control and temperature measurement in a package that works well with
 HomeAssistant/ESPHome.
 
-## 
+## Homing
 
-> [!WARNING] ~~Stoplight is WIP. It has been breadboarded but the first run has not yet been vetted. Proceed with caution.~~ StopLight first run is fully operational.
-
-<video src="https://github.com/willpuckett/stoplight/raw/refs/heads/main/.images/homing.mp4" width="300" />
+https://github.com/user-attachments/assets/ffcdcfab-e069-4eb5-882f-79ae62518dce
 
 ## Fabrication
 
