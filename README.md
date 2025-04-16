@@ -23,7 +23,7 @@ HomeAssistant/ESPHome.
 
 > [!WARNING] ~~Stoplight is WIP. It has been breadboarded but the first run has not yet been vetted. Proceed with caution.~~ StopLight first run is fully operational.
 
-<video src=".images/homing.mp4" width="300" />
+<video src="https://github.com/willpuckett/stoplight/raw/refs/heads/main/.images/homing.mp4" width="300" />
 
 ## Fabrication
 
