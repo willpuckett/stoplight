@@ -35,7 +35,7 @@ steppers.
 ## Example HomeAssistant Config
 
 The build sometimes fails, but can usually be completed by repeatedly pressing
-'try again', or switching to 'arduino' framework.
+'Retry', or switching to 'arduino' framework.
 
 This demo exposes number to make tuning StallGuard easier.
 
