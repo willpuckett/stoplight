@@ -37,7 +37,12 @@ steppers.
 The build sometimes fails, but can usually be completed by repeatedly pressing
 'Retry', or switching to 'arduino' framework.
 
-This demo exposes number to make tuning StallGuard easier.
+<details>
+<summary><h3 style="display:inline-block">Tuning</h3>
+
+This demo exposes a number of controls to make tuning StallGuard easier.
+
+</summary>
 
 ```yaml
 substitutions:
@@ -499,6 +504,230 @@ number:
       - tmc2209.currents:
           irun: !lambda "return x;"
 ```
+</details>
+
+
+<details>
+<summary><h3 style="display:inline-block">Wall Heater</h3>
+
+This demo implements a knob controlled wall heater.
+
+</summary>
+
+```yaml
+substitutions:
+  name: "heater"
+  friendly_name: "Wall Heater"
+  board: "seeed_xiao_esp32c3"
+
+# board/wifi/ota stuff
+packages:
+  device_base: !include .esp32.yaml
+
+esphome:
+  on_boot:
+    # - lambda: id(husb_01)->command_request_voltage(5);
+    - tmc2209.configure:
+        direction: cw # or ccw
+        microsteps: 1
+        interpolation: True
+        enable_spreadcycle: False
+        tcool_threshold: 0
+        tpwm_threshold: 0
+    - tmc2209.stallguard:
+        threshold: 23
+    - tmc2209.currents:
+        standstill_mode: freewheeling
+        run_current: 0.1375 # was 0.150
+        hold_current: 0
+    - button.press: probe_low # home right after boot
+
+external_components:
+  - source: github://slimcdk/esphome-custom-components
+    components: [ tmc2209_hub, tmc2209, stepper ]
+  - source: github://pr#6693
+    components: [ husb238 ]
+
+globals:
+  - id: steps
+    type: int
+    restore_value: yes
+    initial_value: "1000"
+
+i2c:
+  sda: GPIO6
+  scl: GPIO7 
+  frequency: 800kHz
+
+uart:
+  tx_pin: GPIO21
+  rx_pin: GPIO20
+  baud_rate: 500000 # 9600 -> 500k
+
+one_wire:
+  - platform: gpio
+    pin: GPIO10
+
+husb238:
+  id: husb_01
+
+stepper:
+  - platform: tmc2209
+    id: driver
+    max_speed: 480 steps/s
+    acceleration: 1000 steps/s^2 
+    deceleration: 1000 steps/s^2 
+    index_pin: GPIO3
+    diag_pin: GPIO4
+    rsense: 1000 mOhm
+    on_stall:
+      - stepper.stop: driver
+      - logger.log: Endstop Detected 🍍
+
+script:
+  - id: move_stepper
+    mode: restart
+    parameters:
+      # use 0/false for low side endstop, 1/true for high side
+      homing: bool
+      target: int
+    then:
+      - lambda: id(husb_01)->command_request_voltage(20);
+      - tmc2209.configure:
+          tcool_threshold: !lambda 'return homing ? 104 : 0;'
+      - stepper.set_speed:
+          id: driver
+          speed: 480 steps/s
+      - delay: 1s
+      - stepper.set_target:
+          id: driver
+          target: !lambda 'return target;'
+      - wait_until:
+          condition:
+            lambda: 'return id(driver)->has_reached_target();'
+      - logger.log:
+          format: "Moved to %d steps"
+          args: [ 'id(driver)->current_position' ]
+      - tmc2209.disable:
+          id: driver 
+      - lambda: id(husb_01)->command_request_voltage(5);
+
+
+button:
+  - platform: template
+    name: Probe Low
+    id: probe_low 
+    on_press:
+      - climate.control:
+          id: pid_climate
+          mode: 'OFF'
+      - script.execute: 
+          id: move_stepper
+          homing: true
+          target: -9999999
+      - script.wait: move_stepper
+      - stepper.report_position:
+          id: driver
+          position: 0
+      - logger.log:
+          format: "Probed to %d steps"
+          args: [ 'id(driver)->current_position' ]
+      
+  - platform: template
+    name: Probe High
+    id: probe_high
+    on_press:
+      - climate.control:
+          id: pid_climate
+          mode: 'OFF'
+      - script.execute: 
+          id: move_stepper
+          homing: true
+          target: 9999999
+      - script.wait: move_stepper
+      - globals.set:
+          id: steps
+          value: !lambda 'return id(driver)->current_position;'
+ 
+  - platform: template
+    name: "PID Climate Autotune"
+    on_press:
+      - climate.pid.autotune: pid_climate
+
+sensor:
+  - platform: husb238
+    voltage: "Contracted Voltage"
+
+  - platform: template
+    name: "Steps"
+    id: steps_display
+    icon: "mdi:shoe-print"
+    accuracy_decimals: 0
+    lambda: 'return id(steps);'
+
+  - platform: dallas_temp
+    id: ds_temp
+    filters: 
+      - lambda: return x - 13.5;
+
+  # This sensor takes the output from the pid heater and transforms it to step numbers
+  - platform: pid
+    name: "PID Climate Heat"
+    id: heat_float
+    type: HEAT
+    filters:
+      - round_to_multiple_of: 10
+      - delta: 9
+    on_value:
+      then:
+        - script.execute: 
+            id: move_stepper
+            homing: false
+            target: !lambda 'return static_cast<int>(id(steps) * (x / 100));'
+
+
+# This is just a fake output to make the pid heater happy.
+# Ideally, the pin will use the onboard led, but I'm not sure what the pin number is for that...
+output:
+  - platform: ledc
+    pin: GPIO2
+    id: heater_output
+
+# Example configuration entry
+climate:
+  - platform: pid
+    name: "PID Climate Controller"
+    id: pid_climate
+    sensor: ds_temp
+    default_target_temperature: 21°C
+    heat_output: heater_output
+    control_parameters:
+      kp: 4
+      ki: 0.4
+      kd: 0.5
+      output_averaging_samples: 5      # smooth the output over 5 samples
+      derivative_averaging_samples: 5  # smooth the derivative value over 5 samples
+    # deadband_parameters:
+    #   threshold_high: 0.5°C
+    #   threshold_low: -1.0°C
+    #   kp_multiplier: 0.5   # proportional gain reduced inside deadband
+    #   ki_multiplier: 0.25   # integral accumulates at only 25% of normal ki
+    #   kd_multiplier: 0.5   # derviative is reduced inside deadband
+    #   deadband_output_averaging_samples: 5   # average the output over 15 samples within the deadband
+```
+
+</details>
+
+<details>
+<summary><h3 style="display:inline-block">Blinds</h3>
+
+StallGuard blinds operation
+
+</summary>
+
+@todo
+
+</details>
 
 ## Schematic
 
