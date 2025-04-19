@@ -1,4 +1,4 @@
-# Stoplight
+# 🚥 Stoplight
 
 ![top_view](.images/stoplight_top.jpg)
 
@@ -29,9 +29,9 @@ HomeAssistant/ESPHome.
 - [ ] Test fit in mini blind housing
 - [ ] Dim LED brightness
 - [x] Test StallGuard tuning
-  - works well at 12+v ✅
-  - 9v is untested ⚠️
-  - 5v is more finicky
+  - ✅ works very well at 12v+
+  - ⚠️ 9v is untested 
+  - 🚦 5v is more finicky
 - [x] Add esphome sample yaml's
 
 ## Homing
