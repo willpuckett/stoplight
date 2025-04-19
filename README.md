@@ -2,16 +2,17 @@
 
 ![top_view](.images/stoplight_top.jpg)
 
-Stoplight is a Xiao shield for operating small stepper motors. It is designed
-specifically for 28-BYJ48, although it _may_ work with other small steppers as
-well. It aims to provide utility all around the home, and is especially useful
-when working with blinds and knobs.
-
 ### Features
 
 - TMC2209 Stepper Driver
 - 1 Ω Sense Resistors (tuned for small motors)
 - HUSB238 PD Controller for dynamic Voltage Control
+- On-board temperature sensing
+
+Stoplight is a Xiao shield for operating small stepper motors. It is designed
+specifically for 28-BYJ48, although it _may_ work with other small (0.225 RMS Amps or less) steppers as
+well. It aims to provide utility all around the home, and is especially useful
+when working with blinds and knobs.
 
 ![rear pcb view](.images/stoplight_bottom.jpg)
 
