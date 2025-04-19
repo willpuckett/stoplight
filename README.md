@@ -19,6 +19,21 @@ Stoplight seeks to remedy these issues, while also providing software selectable
 voltage control and temperature measurement in a package that works well with
 HomeAssistant/ESPHome.
 
+### Todo 
+
+- [ ] TVS Protection
+- [ ] Change C14 to same as C18 (BOM Consolidation)
+- [ ] Consider removing DIAG and just using UART events instead
+- [ ] Consider reconneacting fan port
+- [ ] Address DS18B20U reading high 
+- [ ] Test fit in mini blind housing
+- [ ] Dim LED brightness
+- [x] Test StallGuard tuning
+  - works well at 12+v ✅
+  - 9v is untested ⚠️
+  - 5v is more finicky
+- [x] Add esphome sample yaml's
+
 ## Homing
 
 ![homing demo](.images/homing.gif)
