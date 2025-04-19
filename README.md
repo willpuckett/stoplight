@@ -37,12 +37,9 @@ steppers.
 The build sometimes fails, but can usually be completed by repeatedly pressing
 'Retry', or switching to 'arduino' framework.
 
-<details>
-<summary><h3 style="display:inline-block">Tuning</h3>
+### Tuning
 
-This demo exposes a number of controls to make tuning StallGuard easier.
-
-</summary>
+<details><summary>This demo exposes a number of controls to make tuning StallGuard easier.</summary>
 
 ```yaml
 substitutions:
@@ -506,13 +503,9 @@ number:
 ```
 </details>
 
+### Wall Heater
 
-<details>
-<summary><h3 style="display:inline-block">Wall Heater</h3>
-
-This demo implements a knob controlled wall heater.
-
-</summary>
+<details><summary>This demo implements a knob controlled wall heater.</summary>
 
 ```yaml
 substitutions:
@@ -718,14 +711,205 @@ climate:
 
 </details>
 
-<details>
-<summary><h3 style="display:inline-block">Blinds</h3>
+### Blinds
 
-StallGuard blinds operation
+<details><summary>StallGuard blinds operation</summary>
 
-</summary>
+```yaml
+substitutions:
+  name: "blins03"
+  blind_number: right
+  friendly_name: "Right Blind"
+  board: "seeed_xiao_esp32c3"
+  delay: "1s"
 
-@todo
+# board/wifi/ota stuff
+packages:
+  device_base: !include .esp32.yaml
+
+esphome:
+  on_boot:
+    - tmc2209.configure:
+        direction: ccw # or ccw
+        microsteps: 1
+        interpolation: True
+        enable_spreadcycle: False
+        tcool_threshold: 0
+        tpwm_threshold: 0
+    - tmc2209.stallguard:
+        threshold: 45 
+    - tmc2209.currents:
+        standstill_mode: freewheeling
+        run_current: 0.1375 # was 0.150
+        hold_current: 0
+
+external_components:
+  - source: github://slimcdk/esphome-custom-components
+    components: [ tmc2209_hub, tmc2209, stepper ]
+  - source: github://pr#6693
+    components: [ husb238 ]
+
+globals:
+  - id: steps
+    type: int
+    restore_value: yes
+    initial_value: "1000"
+
+i2c:
+  sda: GPIO6
+  scl: GPIO7 
+  frequency: 800kHz
+
+uart:
+  tx_pin: GPIO21
+  rx_pin: GPIO20
+  baud_rate: 500000 # 9600 -> 500k
+
+one_wire:
+  - platform: gpio
+    pin: GPIO10
+
+husb238:
+  id: husb_01
+
+stepper:
+  - platform: tmc2209
+    id: driver
+    max_speed: 480 steps/s
+    acceleration: 1000 steps/s^2 
+    deceleration: 1000 steps/s^2 
+    index_pin: GPIO3
+    diag_pin: GPIO4
+    rsense: 1000 mOhm
+    on_stall:
+      - stepper.stop: driver
+      - logger.log: Endstop Detected 🍍
+
+script:
+  - id: move_stepper
+    mode: restart
+    parameters:
+      # use 0/false for low side endstop, 1/true for high side
+      homing: bool
+      target: int
+    then:
+      - lambda: id(husb_01)->command_request_voltage(12);
+      - tmc2209.configure:
+          tcool_threshold: !lambda 'return homing ? 104 : 0;'
+      - stepper.set_speed:
+          id: driver
+          speed: !lambda 'return homing ? 480 : 120;'
+      - delay: 1s
+      - stepper.set_target:
+          id: driver
+          target: !lambda 'return target;'
+      - while:
+          condition:
+            lambda: 'return !id(driver)->has_reached_target();'
+          then:
+            - cover.template.publish:
+                id: ${name}_${blind_number}
+                position: !lambda 'return float( id(driver).current_position ) / float( id(steps) );' 
+                current_operation: !lambda 'return id(driver).current_position < id(driver).target_position ? COVER_OPERATION_OPENING : COVER_OPERATION_CLOSING;'
+            - delay: ${delay}
+      - logger.log:
+          format: "Moved to %d steps"
+          args: [ 'id(driver)->current_position' ]
+      - tmc2209.disable:
+          id: driver 
+      - lambda: id(husb_01)->command_request_voltage(5);
+      - cover.template.publish:
+          id: ${name}_${blind_number}
+          position: !lambda 'return float( id(driver).current_position ) / float( id(steps) );' 
+          current_operation: IDLE
+
+button:
+  - platform: template
+    name: Probe Low
+    id: probe_low 
+    on_press:
+      - script.execute: 
+          id: move_stepper
+          homing: true
+          target: -9999999
+      - script.wait: move_stepper
+      - stepper.report_position:
+          id: driver
+          position: 0
+      - logger.log:
+          format: "Probed to %d steps"
+          args: [ 'id(driver)->current_position' ]
+      
+  - platform: template
+    name: Probe High
+    id: probe_high
+    on_press:
+      - script.execute: 
+          id: move_stepper
+          homing: true
+          target: 9999999
+      - script.wait: move_stepper
+      - globals.set:
+          id: steps
+          value: !lambda 'return id(driver)->current_position;'
+
+sensor:
+  - platform: husb238
+    voltage: "Contracted Voltage"
+
+  - platform: template
+    name: "Steps"
+    id: steps_display
+    icon: "mdi:shoe-print"
+    accuracy_decimals: 0
+    lambda: 'return id(steps);'
+
+  - platform: dallas_temp
+    id: ds_temp
+    filters: 
+      - lambda: return x - 13.5;
+
+cover:
+  - platform: template
+    name: "${blind_number}"
+    id: ${name}_${blind_number}
+    open_action:
+      then:
+        - logger.log: "Opening"
+        - button.press: probe_high
+    close_action:
+      then:
+        - logger.log: "Closing"
+        - button.press: probe_low
+    position_action:
+      then:
+        - logger.log: "Jostling"
+        - script.execute: 
+            id: move_stepper
+            homing: false
+            target: !lambda return int(id(steps) * pos);
+    stop_action:
+      then:
+        - script.execute: 
+            id: move_stepper
+            homing: false
+            target: !lambda return id(driver).current_position;
+    has_position: true
+    device_class: blind
+
+switch:
+  - platform: template
+    name: "Reset ${blind_number}"
+    id: reset_${name}_${blind_number}
+    turn_on_action:
+      - button.press: probe_low
+      - script.wait: move_stepper
+      - button.press: probe_high
+      - script.wait: move_stepper
+      - button.press: probe_low
+      - script.wait: move_stepper
+      - switch.turn_off: reset_${name}_${blind_number}
+```
 
 </details>
 
