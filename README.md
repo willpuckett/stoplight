@@ -7,10 +7,16 @@ specifically for 28-BYJ48, although it _may_ work with other small steppers as
 well. It aims to provide utility all around the home, and is especially useful
 when working with blinds and knobs.
 
+### Features
+
+- TMC2209 Stepper Driver
+- 1 Ω Sense Resistors (tuned for small motors)
+- HUSB238 PD Controller for dynamic Voltage Control
+
 ![rear pcb view](.images/stoplight_bottom.jpg)
 
 Commercial stepsticks have sense resistors that are not properly sized for
-'smaller' motors to take advantage of many of TMC2209's features, including
+'smaller' motors to take advantage of TMC2209's features, including
 stallguard.
 
 > StopLight brings stall sensing to commodity/low cost, high torque motors.
