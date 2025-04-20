@@ -47,7 +47,7 @@ HomeAssistant/ESPHome.
 
 ## Fabrication
 
-Use the [production files](jlcpcb/production_files/) to upload to jlc.
+Use the [production files](jlcpcb/production_files/) to upload to jlc. Or first run [available here](https://octule.com/listing/1891073906/stoplight).
 
 You'll need to swap the motor wires to a JST XH 4 pin housing. In addition to
 removing the red cable, you also **must** perform the
